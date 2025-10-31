@@ -1,6 +1,8 @@
-name: Scan 
+name: Scan Russian Comments
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
+  schedule:
+    - cron: "0 12 * * 0"  # еженедельный запуск по желанию
 
 jobs:
   scan:
@@ -24,23 +26,30 @@ jobs:
           GITHUB_USER: Igorehadem
         run: |
           python <<'EOF'
-          from github import Github
-          import re, os, json
+          from github import Github, Auth
+          import re, os, sys
 
+          # Настройка токена через новый API (убирает DeprecationWarning)
+          auth = Auth.Token(os.getenv("GITHUB_TOKEN"))
+          g = Github(auth=auth)
           user = os.getenv("GITHUB_USER")
-          g = Github(os.getenv("GITHUB_TOKEN"))
           u = g.get_user(user)
 
           CYRILLIC = re.compile(r'[\u0400-\u04FF]')
           results = []
 
-          print(f"Scanning repos for user {user}...")
-          for repo in u.get_repos(type="owner"):
-              print(f"🔎 {repo.full_name}")
+          repos = list(u.get_repos(type="owner"))
+          total = len(repos)
+          print(f"📦 Найдено репозиториев: {total}\n")
+
+          for i, repo in enumerate(repos, start=1):
+              print(f"[{i}/{total}] 🔎 {repo.full_name}")
+              sys.stdout.flush()
+
               try:
-                  contents = repo.get_contents("")
+                  repo.get_contents("")  # проверка доступа
               except Exception as e:
-                  print(f"Skip {repo.name}: {e}")
+                  print(f"  ⚠️ Пропуск {repo.name}: {e}")
                   continue
 
               def walk(path=""):
@@ -62,11 +71,11 @@ jobs:
                       continue
                   try:
                       txt = f.decoded_content.decode('utf-8', errors='ignore')
-                  except:
+                  except Exception:
                       continue
                   if CYRILLIC.search(txt):
-                      snippet = CYRILLIC.search(txt)
-                      context = txt[snippet.start():snippet.start()+120].replace("\n"," ")
+                      match = CYRILLIC.search(txt)
+                      context = txt[match.start():match.start()+120].replace("\n"," ")
                       results.append({
                           "repo": repo.full_name,
                           "file": f.path,
@@ -84,7 +93,7 @@ jobs:
                       fh.write(f"- `{r['file']}` ({r['size']} bytes)\n")
                       fh.write(f"  ```\n  {r['snippet']}\n  ```\n\n")
 
-          print(f"Found {len(results)} files.")
+          print(f"\n✅ Сканирование завершено. Найдено файлов с кириллицей: {len(results)}")
           EOF
 
       - name: Upload result
