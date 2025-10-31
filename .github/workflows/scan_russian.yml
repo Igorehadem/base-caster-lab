@@ -1,0 +1,94 @@
+name: Scan 
+on:
+  workflow_dispatch: 
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: pip install PyGithub
+
+      - name: Run scan script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_USER: Igorehadem
+        run: |
+          python <<'EOF'
+          from github import Github
+          import re, os, json
+
+          user = os.getenv("GITHUB_USER")
+          g = Github(os.getenv("GITHUB_TOKEN"))
+          u = g.get_user(user)
+
+          CYRILLIC = re.compile(r'[\u0400-\u04FF]')
+          results = []
+
+          print(f"Scanning repos for user {user}...")
+          for repo in u.get_repos(type="owner"):
+              print(f"🔎 {repo.full_name}")
+              try:
+                  contents = repo.get_contents("")
+              except Exception as e:
+                  print(f"Skip {repo.name}: {e}")
+                  continue
+
+              def walk(path=""):
+                  try:
+                      items = repo.get_contents(path)
+                  except Exception:
+                      return []
+                  files = []
+                  for it in items:
+                      if it.type == "dir":
+                          files += walk(it.path)
+                      else:
+                          files.append(it)
+                  return files
+
+              files = walk()
+              for f in files:
+                  if f.size > 200_000:
+                      continue
+                  try:
+                      txt = f.decoded_content.decode('utf-8', errors='ignore')
+                  except:
+                      continue
+                  if CYRILLIC.search(txt):
+                      snippet = CYRILLIC.search(txt)
+                      context = txt[snippet.start():snippet.start()+120].replace("\n"," ")
+                      results.append({
+                          "repo": repo.full_name,
+                          "file": f.path,
+                          "size": f.size,
+                          "snippet": context
+                      })
+
+          with open("russian_scan_report.md","w",encoding="utf-8") as fh:
+              fh.write("# 🇷🇺 Russian text scan report\n\n")
+              if not results:
+                  fh.write("✅ No Cyrillic found.\n")
+              else:
+                  for r in results:
+                      fh.write(f"### [{r['repo']}]({ 'https://github.com/' + r['repo'] })\n")
+                      fh.write(f"- `{r['file']}` ({r['size']} bytes)\n")
+                      fh.write(f"  ```\n  {r['snippet']}\n  ```\n\n")
+
+          print(f"Found {len(results)} files.")
+          EOF
+
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: russian-scan-report
+          path: russian_scan_report.md
