@@ -56,6 +56,14 @@ async function main() {
     }
   }, 30_000);
 
+if (!fs.existsSync(logFile)) {
+  fs.writeFileSync(logFile, JSON.stringify({
+    info: "no events yet",
+    timestamp: new Date().toISOString()
+  }) + "\n");
+}
+
+
   // Auto-stop after 2 min
   setTimeout(() => {
     clearInterval(interval);
