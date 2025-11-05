@@ -2,8 +2,8 @@ name: Run Base Listener
 
 on:
   schedule:
-    - cron: "*/30 * * * *"  # 
-  workflow_dispatch:        # 
+    - cron: "*/15 * * * *"  # каждые 15 минут
+  workflow_dispatch:        # можно запустить вручную
 
 jobs:
   listen:
@@ -22,8 +22,8 @@ jobs:
 
       - name: Run listener
         env:
-          BASE_RPC_URL: https://mainnet.base.org
-          CONTRACT_ADDRESS: 0x0a827a81C2Dd01acc9fE1E3a8F7c7CB753F7405F
+          BASE_RPC_URL: "https://mainnet.base.org"
+          CONTRACT_ADDRESS: "0x0a827a81C2Dd01acc9fE1E3a8F7c7CB753F7405F"
         run: node src/listener.ts
 
       - name: Commit and push logs
