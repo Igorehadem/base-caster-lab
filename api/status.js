@@ -3,7 +3,7 @@
 import fs from "fs";
 import path from "path";
 
-export const config = { runtime: "edge" };
+export const config = { runtime: "nodejs" };
 
 export default async function handler(req) {
   const rpc = process.env.BASE_RPC_URL || "https://mainnet.base.org";
