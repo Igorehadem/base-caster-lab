@@ -1,6 +1,7 @@
 // src/listener.ts
-// Base mainnet event polling listener with auto-shutdown
-import { ethers } from "ethers";
+// Base mainnet event polling listener (safe for TypeScript + GitHub Actions)
+
+import { ethers, EventLog } from "ethers";
 import fs from "fs";
 import path from "path";
 
@@ -9,9 +10,7 @@ async function main() {
   const address = process.env.CONTRACT_ADDRESS!;
   const provider = new ethers.JsonRpcProvider(rpcUrl);
 
-  const abi = [
-    "event Prediction(address indexed user, string message)",
-  ];
+  const abi = ["event Prediction(address indexed user, string message)"];
   const contract = new ethers.Contract(address, abi, provider);
 
   const logsDir = path.resolve("logs");
@@ -35,16 +34,20 @@ async function main() {
       const events = await contract.queryFilter("Prediction", from, current);
 
       for (const e of events) {
-        const record = {
-          event: e.eventName,
-          user: e.args?.[0],
-          message: e.args?.[1],
-          block: e.blockNumber,
-          tx: e.transactionHash,
-          timestamp: new Date().toISOString(),
-        };
-        console.log(`✨ ${record.user}: "${record.message}"`);
-        fs.appendFileSync(logFile, JSON.stringify(record) + "\n");
+        // Narrow to EventLog (skip raw logs)
+        if ("args" in e) {
+          const ev = e as EventLog;
+          const record = {
+            event: ev.eventName || "Prediction",
+            user: ev.args?.[0],
+            message: ev.args?.[1],
+            block: ev.blockNumber,
+            tx: ev.transactionHash,
+            timestamp: new Date().toISOString(),
+          };
+          console.log(`✨ ${record.user}: "${record.message}"`);
+          fs.appendFileSync(logFile, JSON.stringify(record) + "\n");
+        }
       }
 
       lastBlock = current;
@@ -53,7 +56,7 @@ async function main() {
     }
   }, 30_000);
 
-  // Auto-stop after 2 minutes
+  // Auto-stop after 2 min
   setTimeout(() => {
     clearInterval(interval);
     console.log("\n🛑 Listener stopped after 2 minutes.");
