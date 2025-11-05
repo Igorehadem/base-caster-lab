@@ -2,7 +2,8 @@ name: Run Base Listener
 
 on:
   schedule:
-    - cron: "*/15 * * * *"  # каждые 15 минут
+    - cron: "*/1115 * * * *"
+  workflow_dispatch:
 
 jobs:
   listen:
@@ -17,13 +18,14 @@ jobs:
           node-version: 20
 
       - name: Install deps
-        run: npm install ethers fs-extra
+        run: |
+          npm install ethers fs-extra ts-node typescript
 
-      - name: Run listener
+      - name: Run listener (TypeScript)
         env:
           BASE_RPC_URL: "https://mainnet.base.org"
           CONTRACT_ADDRESS: "0x0a827a81C2Dd01acc9fE1E3a8F7c7CB753F7405F"
-        run: node src/listener.ts
+        run: npx ts-node src/listener.ts
 
       - name: Commit and push logs
         run: |
