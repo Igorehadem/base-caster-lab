@@ -1,0 +1,35 @@
+name: Run Base Listener
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"  # 
+  workflow_dispatch:        # 
+
+jobs:
+  listen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: npm install ethers fs-extra
+
+      - name: Run listener
+        env:
+          BASE_RPC_URL: https://mainnet.base.org
+          CONTRACT_ADDRESS: 0x0a827a81C2Dd01acc9fE1E3a8F7c7CB753F7405F
+        run: node src/listener.ts
+
+      - name: Commit and push logs
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git add logs/ || true
+          git commit -m "auto: update logs [skip ci]" || true
+          git push || true
