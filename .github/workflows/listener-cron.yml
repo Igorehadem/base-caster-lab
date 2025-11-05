@@ -4,7 +4,10 @@ on:
   schedule:
     - cron: "*/1115 * * * *"
   workflow_dispatch:
-
+  
+permissions:
+  contents: write   # ✅ 
+  
 jobs:
   listen:
     runs-on: ubuntu-latest
