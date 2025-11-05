@@ -25,8 +25,8 @@ README.md # project overview
 ---
 
 ## ⚙️ Roadmap
-- [ ] Add configurable event listener for Base contracts  
-- [ ] Implement logging and filtering utilities  
+- [x] Add configurable event listener for Base contracts  
+- [x] Implement logging and filtering utilities  
 - [ ] Connect Farcaster identity to on-chain activity  
 - [ ] Visualize metrics (casts ↔ tx)  
 
