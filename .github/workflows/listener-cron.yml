@@ -3,7 +3,6 @@ name: Run Base Listener
 on:
   schedule:
     - cron: "*/15 * * * *"  # каждые 15 минут
-  workflow_dispatch:        # можно запустить вручную
 
 jobs:
   listen:
