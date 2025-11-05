@@ -1,4 +1,5 @@
-// src/listener.ts  
+// src/listener.ts
+// Base mainnet event polling listener with auto-shutdown
 import { ethers } from "ethers";
 import fs from "fs";
 import path from "path";
@@ -15,20 +16,26 @@ async function main() {
 
   const logsDir = path.resolve("logs");
   if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir);
-  const logFile = path.join(logsDir, `events_${new Date().toISOString().slice(0,10).replace(/-/g,"")}.json`);
+  const logFile = path.join(
+    logsDir,
+    `events_${new Date().toISOString().slice(0, 10).replace(/-/g, "")}.json`
+  );
 
-  console.log("🧩 Polling Base mainnet for Prediction events…");
+  console.log("🧩 Base Caster Lab — Polling for Prediction events");
+  console.log("🔗 RPC:", rpcUrl);
+  console.log("🏛 Contract:", address);
+  console.log("🕒 Will auto-stop after 2 minutes\n");
 
   let lastBlock = await provider.getBlockNumber();
 
-  // Проверяем каждые 30 сек
-  setInterval(async () => {
+  const interval = setInterval(async () => {
     try {
       const current = await provider.getBlockNumber();
-      const from = Math.max(current - 200, lastBlock);   // окно ≈ 200 блоков
+      const from = Math.max(current - 200, lastBlock);
       const events = await contract.queryFilter("Prediction", from, current);
+
       for (const e of events) {
-        const data = {
+        const record = {
           event: e.eventName,
           user: e.args?.[0],
           message: e.args?.[1],
@@ -36,14 +43,25 @@ async function main() {
           tx: e.transactionHash,
           timestamp: new Date().toISOString(),
         };
-        console.log(`✨ ${data.user}: ${data.message}`);
-        fs.appendFileSync(logFile, JSON.stringify(data) + "\n");
+        console.log(`✨ ${record.user}: "${record.message}"`);
+        fs.appendFileSync(logFile, JSON.stringify(record) + "\n");
       }
+
       lastBlock = current;
     } catch (err) {
-      console.warn("⚠️ polling error:", (err as Error).message);
+      console.warn("⚠️ Polling error:", (err as Error).message);
     }
   }, 30_000);
+
+  // Auto-stop after 2 minutes
+  setTimeout(() => {
+    clearInterval(interval);
+    console.log("\n🛑 Listener stopped after 2 minutes.");
+    process.exit(0);
+  }, 2 * 60 * 1000);
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  console.error("❌ Listener crashed:", err);
+  process.exit(1);
+});
