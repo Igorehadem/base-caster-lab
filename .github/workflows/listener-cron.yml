@@ -8,7 +8,7 @@ name: Run Base Listener
 
 on:
   schedule:
-    - cron: "0 0 * * *" 
+    - cron: "0 0 * * *" # every 24 hours
   workflow_dispatch:
   
 permissions:
@@ -18,24 +18,29 @@ jobs:
   listen:
     runs-on: ubuntu-latest
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Node.js environment
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
+          
+      # 3️⃣ Install dependencies
       - name: Install deps
         run: |
           npm install ethers fs-extra ts-node typescript
-
+          
+      # 4️⃣ Run listener (TypeScript)
       - name: Run listener (TypeScript)
         env:
           BASE_RPC_URL: "https://mainnet.base.org"
           CONTRACT_ADDRESS: "0x0a827a81C2Dd01acc9fE1E3a8F7c7CB753F7405F"
         run: npx ts-node --compiler-options '{"module":"CommonJS"}' src/listener.ts
-
+        
+      # 5️⃣ Commit and push logs
       - name: Commit and push logs
         run: |
           git config user.name "GitHub Action"
