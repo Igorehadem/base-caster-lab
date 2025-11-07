@@ -1,29 +1,28 @@
-// src/listener.ts
-// Base mainnet event polling listener (safe for TypeScript + GitHub Actions)
+// ----------------------------------------------------------
+// 🧠 Base Caster Lab — Base mainnet event polling listener
+// Safe for TypeScript & GitHub Actions (no secrets)
+// ----------------------------------------------------------
 
 import { ethers, EventLog } from "ethers";
-import fs from "fs";
-import path from "path";
+import { appendLog, ensureLogsDir } from "../lib/logger.js";
 
+// Entry point
 async function main() {
   const rpcUrl = process.env.BASE_RPC_URL || "https://mainnet.base.org";
-  const address = process.env.CONTRACT_ADDRESS!;
-  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  const contractAddress =
+    process.env.CONTRACT_ADDRESS ||
+    "0x0a827a81C2Dd01acc9fE1E3a8F7c7CB753F7405F";
 
   const abi = ["event Prediction(address indexed user, string message)"];
-  const contract = new ethers.Contract(address, abi, provider);
+  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  const contract = new ethers.Contract(contractAddress, abi, provider);
 
-  const logsDir = path.resolve("logs");
-  if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir);
-  const logFile = path.join(
-    logsDir,
-    `events_${new Date().toISOString().slice(0, 10).replace(/-/g, "")}.json`
-  );
+  ensureLogsDir();
 
-  console.log("🧩 Base Caster Lab — Polling for Prediction events");
+  console.log("🧠 Base Caster Lab — Polling for Prediction events");
   console.log("🔗 RPC:", rpcUrl);
-  console.log("🏛 Contract:", address);
-  console.log("🕒 Will auto-stop after 2 minutes\n");
+  console.log("📜 Contract:", contractAddress);
+  console.log("⏱️  Polling every 30 seconds...");
 
   let lastBlock = await provider.getBlockNumber();
 
@@ -34,45 +33,26 @@ async function main() {
       const events = await contract.queryFilter("Prediction", from, current);
 
       for (const e of events) {
-        // Narrow to EventLog (skip raw logs)
-        if ("args" in e) {
-          const ev = e as EventLog;
+        if (e instanceof EventLog) {
           const record = {
-            event: ev.eventName || "Prediction",
-            user: ev.args?.[0],
-            message: ev.args?.[1],
-            block: ev.blockNumber,
-            tx: ev.transactionHash,
-            timestamp: new Date().toISOString(),
+            event: e.eventName || "Prediction",
+            user: e.args?.[0],
+            message: e.args?.[1],
+            block: e.blockNumber,
+            tx: e.transactionHash,
           };
-          console.log(`✨ ${record.user}: "${record.message}"`);
-          fs.appendFileSync(logFile, JSON.stringify(record) + "\n");
+          appendLog(record);
         }
       }
 
       lastBlock = current;
     } catch (err) {
-      console.warn("⚠️ Polling error:", (err as Error).message);
+      console.warn("⚠️ Polling error:", err.message);
     }
   }, 30_000);
-
-if (!fs.existsSync(logFile)) {
-  fs.writeFileSync(logFile, JSON.stringify({
-    info: "no events yet",
-    timestamp: new Date().toISOString()
-  }) + "\n");
-}
-
-
-  // Auto-stop after 2 min
-  setTimeout(() => {
-    clearInterval(interval);
-    console.log("\n🛑 Listener stopped after 2 minutes.");
-    process.exit(0);
-  }, 2 * 60 * 1000);
 }
 
 main().catch((err) => {
-  console.error("❌ Listener crashed:", err);
+  console.error("❌ Listener crashed:", err.message);
   process.exit(1);
 });
