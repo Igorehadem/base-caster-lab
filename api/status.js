@@ -1,71 +1,97 @@
-// api/status.js
-// Status endpoint with safe file access for Node runtime
-
-export const config = { runtime: "nodejs" };
+// ----------------------------------------------------------
+// 📊 Base Caster Lab — Status Dashboard
+// Displays last logged events from /logs/ folder
+// Auto-refreshes every 10 seconds
+// ----------------------------------------------------------
 
 import fs from "fs";
 import path from "path";
 
-export default async function handler(req, res) {
-  const rpc = process.env.BASE_RPC_URL || "https://mainnet.base.org";
-  const contract =
-    process.env.CONTRACT_ADDRESS ||
-    "0x0a827a81C2Dd01acc9fE1E3a8F7c7CB753F7405F";
+export const config = { runtime: "edge" };
 
-  let lastLines = [];
-  try {
-    const logsDir = path.resolve("logs");
-    if (!fs.existsSync(logsDir)) {
-      fs.mkdirSync(logsDir);
-    }
-    const files = fs
-      .readdirSync(logsDir)
-      .filter((f) => f.startsWith("events_"))
-      .sort()
-      .reverse();
-    if (files.length > 0) {
-      const latest = path.join(logsDir, files[0]);
-      const content = fs.readFileSync(latest, "utf8").trim().split("\n");
-      lastLines = content.slice(-5).map((line) => JSON.parse(line));
-    }
-  } catch (err) {
-    console.error("⚠️ Log read error:", err.message);
+export default async function handler() {
+  const logsDir = path.resolve("logs");
+  const files = fs.existsSync(logsDir)
+    ? fs.readdirSync(logsDir).filter((f) => f.endsWith(".json")).sort().reverse()
+    : [];
+
+  let events = [];
+  if (files.length > 0) {
+    const lastFile = path.join(logsDir, files[0]);
+    const lines = fs.readFileSync(lastFile, "utf8").trim().split("\n");
+    events = lines
+      .map((line) => {
+        try {
+          return JSON.parse(line);
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean)
+      .reverse(); // newest on top
   }
 
-  res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.status(200).send(`
-    <html>
-      <head>
-        <title>Base Caster Lab Status</title>
-        <meta http-equiv="refresh" content="10" />
-        <style>
-          body { font-family: system-ui, sans-serif; padding: 20px; }
-          table { border-collapse: collapse; width: 100%; }
-          th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-          th { background: #f3f3f3; }
-          pre { margin: 0; }
-        </style>
-      </head>
-      <body>
-        <h1>🧪 Base Caster Lab Status</h1>
-        <p><b>RPC:</b> ${rpc}</p>
-        <p><b>Contract:</b> ${contract}</p>
-        <h3>🗄 Last Events (auto-refresh every 10s)</h3>
-        ${
-          lastLines.length
-            ? `<table><tr><th>Event</th><th>Block</th><th>Tx</th><th>Time</th></tr>
-              ${lastLines
-                .map(
-                  (e) =>
-                    `<tr><td>${e.event || e.name}</td><td>${e.block}</td><td><pre>${e.tx.slice(
-                      0,
-                      10
-                    )}...</pre></td><td>${e.timestamp}</td></tr>`
-                )
-                .join("")}</table>`
-            : `<p>No log entries yet.</p>`
+  const total = events.length;
+  const last5 = events.slice(0, 5);
+
+  const html = `
+  <html>
+    <head>
+      <meta charset="utf-8" />
+      <meta name="robots" content="noindex,nofollow" />
+      <title>Base Caster Lab — Status</title>
+      <style>
+        body {
+          background: #0b0c10;
+          color: #d1d5db;
+          font-family: ui-monospace, monospace;
+          padding: 20px;
+          line-height: 1.5;
         }
-      </body>
-    </html>
-  `);
+        h1 { color: #58a6ff; }
+        .event {
+          background: #161b22;
+          border-left: 3px solid #58a6ff;
+          margin: 8px 0;
+          padding: 10px 12px;
+          border-radius: 6px;
+        }
+        .event:first-child {
+          background: #1e1e2f;
+          border-left-color: #22c55e;
+        }
+        .meta { color: #9ca3af; font-size: 14px; }
+      </style>
+      <script>
+        setTimeout(() => location.reload(), 10000);
+      </script>
+    </head>
+    <body>
+      <h1>🧠 Base Caster Lab — Status Dashboard</h1>
+      <p>Showing last 5 events (of ${total} total)</p>
+
+      ${last5
+        .map(
+          (ev) => `
+        <div class="event">
+          <div><strong>${ev.event}</strong> — <span>${ev.message}</span></div>
+          <div class="meta">
+            User: ${ev.user}<br/>
+            Block: ${ev.block} | Tx: ${ev.tx.slice(0, 10)}...<br/>
+            Time: ${new Date(ev.timestamp).toLocaleString()}
+          </div>
+        </div>`
+        )
+        .join("")}
+
+      <p style="margin-top: 30px; font-size: 13px; color: #6b7280;">
+        Auto-refreshes every 10 s · Last file: ${files[0] || "none"}
+      </p>
+    </body>
+  </html>`;
+
+  return new Response(html, {
+    status: 200,
+    headers: { "Content-Type": "text/html" },
+  });
 }
