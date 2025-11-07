@@ -1,18 +1,25 @@
 {
   "name": "base-caster-lab",
-  "version": "0.1.0",
-  "description": "Experimental Base + Farcaster lab for event logging and analysis.",
-  "private": true,
-  "type": "commonjs",
+  "version": "0.2.0",
+  "description": "Experimental Base × Farcaster integration lab — event listener and dashboard",
+  "author": "Igorehadem",
+  "license": "MIT",
+  "keywords": [
+    "base",
+    "farcaster",
+    "listener",
+    "frame",
+    "vercel",
+    "cron",
+    "warpcast"
+  ],
   "scripts": {
-    "build": "echo 'Nothing to build'",
-    "dev": "node src/listener.ts",
-    "start": "node src/listener.ts"
+    "dev": "ts-node src/listener.ts",
+    "start": "node src/listener.js"
   },
   "dependencies": {
-    "ethers": "^6.13.0"
+    "ethers": "^6.10.0",
+    "fs-extra": "^11.2.0"
   },
-  "engines": {
-    "node": ">=18"
-  }
+  "type": "module"
 }
