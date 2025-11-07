@@ -1,3 +1,9 @@
+# ----------------------------------------------------------
+# 🧠 Base Caster Lab — Scheduled Event Listener
+# GitHub Action that runs every few hours to fetch Base events
+# Logs results into /logs/ folder and auto-commits them.
+# ----------------------------------------------------------
+
 name: Run Base Listener
 
 on:
