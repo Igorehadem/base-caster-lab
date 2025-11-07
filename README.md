@@ -152,3 +152,33 @@ Each log entry includes event name, user, block number, tx hash, and timestamp:
 ## 📜 License
 
 MIT License © 2025 [Igorehadem](https://github.com/Igorehadem)
+
+---
+
+## 🧱 Development Summary
+
+> Repository activity and maintenance checklist for Base Caster Lab
+
+| # | Commit Type | Description | Status |
+|---|--------------|-------------|:------:|
+| 1 | `docs:` | ✏️ Rebuilt and structured `README.md` with badges, roadmap & stack | ✅ |
+| 2 | `docs:` | 🧠 Added detailed comments to `.github/workflows/listener-cron.yml` | ✅ |
+| 3 | `feat:` | 🧾 Created `/lib/logger.js` utility for consistent JSON logging | ✅ |
+| 4 | `refactor:` | ♻️ Rewrote `src/listener.ts` to use logger utility | ✅ |
+| 5 | `feat:` | 📊 Enhanced `/api/status.js` with auto-refresh and event counter | ✅ |
+| 6 | `docs:` | 🔧 Updated `.env.example` with `SAVE_INTERVAL` and comments | ✅ |
+| 7 | `meta:` | 🪪 Updated `package.json` with description, author, keywords | ✅ |
+| 8 | `chore:` | 📜 Added MIT License | ✅ |
+| 9 | `chore:` | 🧹 Added `.prettierrc` and `.editorconfig` | ✅ |
+| 10 | `docs:` | 🧱 Added this summary checklist section | ✅ |
+
+---
+
+### 🧭 Project Highlights
+- Modular architecture (logger, listener, API, cron)
+- Reusable structure for any Base + Farcaster experiment
+- Zero private keys, 100% public-safe  
+- Ready-to-fork demo for other Base builders 🚀
+
+_Last updated: **${new Date().toISOString().slice(0,10)}**_
+
