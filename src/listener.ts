@@ -3,6 +3,13 @@
 // Safe for TypeScript & GitHub Actions (no secrets)
 // ----------------------------------------------------------
 
+const MAX_RUNTIME_MS = 3 * 60 * 1000;
+
+setTimeout(() => {
+  console.warn("⏳ Listener timeout reached — exiting.");
+  process.exit(0);
+}, MAX_RUNTIME_MS);
+
 import { ethers, EventLog } from "ethers";
 import { appendLog, ensureLogsDir } from "../lib/logger.js";
 
