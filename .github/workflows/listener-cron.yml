@@ -6,10 +6,6 @@
 
 name: Run Base Listener
 
-- name: Install deps
-  run: |
-    npm install ethers fs-extra ts-node typescript tsx
-
 on:
   schedule:
     - cron: "0 0 * * *" # every 24 hours
@@ -35,7 +31,7 @@ jobs:
       # 3️⃣ Install dependencies
       - name: Install deps
         run: |
-          npm install ethers fs-extra ts-node typescript
+          npm install ethers fs-extra ts-node typescript tsx
           
       # 4️⃣ Run listener (TypeScript)
       - name: Run listener (TypeScript)
