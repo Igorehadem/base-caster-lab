@@ -6,6 +6,10 @@
 
 name: Run Base Listener
 
+- name: Install deps
+  run: |
+    npm install ethers fs-extra ts-node typescript tsx
+
 on:
   schedule:
     - cron: "0 0 * * *" # every 24 hours
@@ -38,7 +42,7 @@ jobs:
         env:
           BASE_RPC_URL: "https://mainnet.base.org"
           CONTRACT_ADDRESS: "0x0a827a81C2Dd01acc9fE1E3a8F7c7CB753F7405F"
-        run: node --loader ts-node/esm src/listener.ts
+        run: npx tsx src/listener.ts
 
       # 5️⃣ Commit and push logs
       - name: Commit and push logs
