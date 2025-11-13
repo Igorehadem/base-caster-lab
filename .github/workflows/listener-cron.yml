@@ -38,8 +38,8 @@ jobs:
         env:
           BASE_RPC_URL: "https://mainnet.base.org"
           CONTRACT_ADDRESS: "0x0a827a81C2Dd01acc9fE1E3a8F7c7CB753F7405F"
-        run: npx ts-node --compiler-options '{"module":"CommonJS"}' src/listener.ts
-        
+        run: node --loader ts-node/esm src/listener.ts
+
       # 5️⃣ Commit and push logs
       - name: Commit and push logs
         run: |
